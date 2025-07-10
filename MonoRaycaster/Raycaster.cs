@@ -4,14 +4,19 @@ using System;
 
 namespace MonoRaycaster;
 
+/// <summary>
+/// simple 2D raycaster implementation, based on 
+/// https://lodev.org/cgtutor/raycasting.html
+/// the code has been updated to render the map to a framebuffer, rotated 90 degrees
+/// </summary>
 public class Raycaster
 {
     private double posX = 22; // player position X
     private double posY = 12; // player position Y
-    private double dirX = -1; // initial direction vector X
-    private double dirY = 0; // initial direction vector Y
-    private double planeX = 0; // the 2D raycaster version of camera plane X
-    private double planeY = .66; // the 2D raycaster version of camera plane Y
+    private double dirX = 0; // initial direction vector X (rotated 90 degrees)
+    private double dirY = -1; // initial direction vector Y (rotated 90 degrees)
+    private double planeX = .66; // the 2D raycaster version of camera plane X (rotated 90 degrees)
+    private double planeY = 0; // the 2D raycaster version of camera plane Y (rotated 90 degrees)
 
     public readonly Color[] FrameBuffer;
 
@@ -101,16 +106,15 @@ public class Raycaster
 
     private void UpdateFrameBuffer()
     {
-        // Array.Fill(FrameBuffer, Color.Transparent);
         var span = FrameBuffer.AsSpan();
         span.Fill(Color.Transparent);
 
-        for (int x = 0; x < _screenWidth; x++)
+        for (int y = 0; y < _screenHeight; y++)
         {
             //calculate ray position and direction
-            double cameraX = 2 * x / (double)_screenWidth - 1; //x-coordinate in camera space
-            double rayDirX = dirX + planeX * cameraX;
-            double rayDirY = dirY + planeY * cameraX;
+            double cameraY = 2 * y / (double)_screenHeight - 1; //y-coordinate in camera space
+            double rayDirX = dirX + planeX * cameraY;
+            double rayDirY = dirY + planeY * cameraY;
             //which box of the map we're in
             int mapX = (int)posX;
             int mapY = (int)posY;
@@ -149,7 +153,6 @@ public class Raycaster
             int side = 0;
             while (hit == 0)
             {
-                //jump to next map square, either in x-direction, or in y-direction
                 if (sideDistX < sideDistY)
                 {
                     sideDistX += deltaDistX;
@@ -167,23 +170,21 @@ public class Raycaster
                     hit = 1;
             }
 
-            double perpWallDist;
-            if (side == 0)
-                perpWallDist = (sideDistX - deltaDistX);
-            else
-                perpWallDist = (sideDistY - deltaDistY);
+            double perpWallDist = side == 0
+                ? (sideDistX - deltaDistX)
+                : (sideDistY - deltaDistY);
 
-            int lineHeight = (int)(_screenHeight / perpWallDist);
+            int lineWidth = (int)(_screenWidth / perpWallDist);
 
-            int drawStart = (-lineHeight + _screenHeight) / 2;
+            int drawStart = (-lineWidth + _screenWidth) / 2;
             if (drawStart < 0)
                 drawStart = 0;
 
-            int drawEnd = (lineHeight + _screenHeight) / 2;
-            if (drawEnd >= _screenHeight)
-                drawEnd = _screenHeight - 1;
+            int drawEnd = (lineWidth + _screenWidth) / 2;
+            if (drawEnd >= _screenWidth)
+                drawEnd = _screenWidth - 1;
 
-            var color = Color.Yellow; 
+            var color = Color.Yellow;
             color = _map[mapX][mapY] switch
             {
                 1 => Color.Red,
@@ -195,10 +196,12 @@ public class Raycaster
             if (side == 1)
                 color = color * .5f;
 
-            for (int y = drawStart; y <= drawEnd; y++)
-                FrameBuffer[x + y * _screenWidth] = color;
-            //for (int y = 0; y < _screenHeight; y++)
-            //    FrameBuffer[x + y * _screenWidth] = (y >= drawStart && y <= drawEnd) ? color : Color.Transparent;
+            int length = drawEnd - drawStart + 1;
+            if (length > 0)
+            {
+                int row = y * _screenWidth;
+                span.Slice(row + drawStart, length).Fill(color);
+            }
         }
     }
 }
