@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.Linq;
 
 namespace MonoRaycaster;
 
@@ -14,9 +15,9 @@ public class RaycasterGame : Game
 
     private readonly static Vector2 _halfScreenSize = new(ScreenWidth / 2, ScreenHeight / 2);
 
-    private const int FrameBufferWidth = 1536;
-    private const int FrameBufferHeight = 2048;
-
+    // inverted, the raycaster is rendering data rotated 90 degrees
+    private const int FrameBufferWidth = ScreenHeight;
+    private const int FrameBufferHeight = ScreenWidth;
     private readonly static Vector2 _halfFrameBufferSize = new(FrameBufferWidth / 2, FrameBufferHeight / 2);
 
     private int[][] _map = [
@@ -77,7 +78,9 @@ public class RaycasterGame : Game
 
         _frameTexture = new Texture2D(GraphicsDevice, FrameBufferWidth, FrameBufferHeight);
 
-        _raycaster = new(_map, FrameBufferWidth, FrameBufferHeight);
+        var mainTexture = Content.Load<Texture2D>("wolftextures");
+        var textures = mainTexture.Split(64, 64).Select(t => t.Rotate90(RotationDirection.CounterClockwise)).ToArray();
+        _raycaster = new TexturedRaycaster(_map, FrameBufferWidth, FrameBufferHeight, textures);
 
         _font = Content.Load<SpriteFont>("Font");
     }
