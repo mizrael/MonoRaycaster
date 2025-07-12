@@ -6,12 +6,12 @@ namespace MonoRaycaster;
 
 public class Camera
 {
-    private double _posX = 22; 
-    private double _posY = 12; 
-    private double _dirX = 0; 
-    private double _dirY = -1; 
-    private double _planeX = .66; 
-    private double _planeY = 0;
+    private float _posX = 22; 
+    private float _posY = 12; 
+    private float _dirX = 0; 
+    private float _dirY = -1; 
+    private float _planeX = .66f; 
+    private float _planeY = 0;
 
     private readonly int[][] _map;
 
@@ -27,8 +27,9 @@ public class Camera
 
     public void Update(GameTime gameTime)
     {
-        double moveSpeed = gameTime.ElapsedGameTime.TotalMilliseconds * .015f;
-        double rotSpeed = gameTime.ElapsedGameTime.TotalMilliseconds * .005f;
+        float ms = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+        float moveSpeed = ms * .015f;
+        float rotSpeed = ms * .005f;
 
         var keyboardState = Keyboard.GetState();
 
@@ -56,36 +57,36 @@ public class Camera
 
         if (keyboardState.IsKeyDown(Keys.D))
         {
-            double oldDirX = _dirX;
-            var cos = Math.Cos(-rotSpeed);
-            var sin = Math.Sin(-rotSpeed);
+            float oldDirX = _dirX;
+            var cos = MathF.Cos(-rotSpeed);
+            var sin = MathF.Sin(-rotSpeed);
 
             _dirX = _dirX * cos - _dirY * sin;
             _dirY = oldDirX * sin + _dirY * cos;
 
-            double oldPlaneX = _planeX;
+            float oldPlaneX = _planeX;
             _planeX = _planeX * cos - _planeY * sin;
             _planeY = oldPlaneX * sin + _planeY * cos;
         }
         else if (keyboardState.IsKeyDown(Keys.A))
         {
-            double oldDirX = _dirX;
-            var cos = Math.Cos(rotSpeed);
-            var sin = Math.Sin(rotSpeed);
+            float oldDirX = _dirX;
+            var cos = MathF.Cos(rotSpeed);
+            var sin = MathF.Sin(rotSpeed);
 
             _dirX = _dirX * cos - _dirY * sin;
             _dirY = oldDirX * sin + _dirY * cos;
 
-            double oldPlaneX = _planeX;
+            float oldPlaneX = _planeX;
             _planeX = _planeX * cos - _planeY * sin;
             _planeY = oldPlaneX * sin + _planeY * cos;
         }
     }
 
-    public double PosX => _posX;
-    public double PosY => _posY;
-    public double DirX => _dirX;
-    public double DirY => _dirY;
-    public double PlaneX => _planeX;
-    public double PlaneY => _planeY;
+    public float PosX => _posX;
+    public float PosY => _posY;
+    public float DirX => _dirX;
+    public float DirY => _dirY;
+    public float PlaneX => _planeX;
+    public float PlaneY => _planeY;
 }

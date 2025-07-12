@@ -35,20 +35,20 @@ public class Raycaster
         for (int y = 0; y < _screenHeight; y++)
         {
             //calculate ray position and direction
-            double cameraY = 2 * y / (double)_screenHeight - 1; //y-coordinate in camera space
-            double rayDirX = camera.DirX + camera.PlaneX * cameraY;
-            double rayDirY = camera.DirY + camera.PlaneY * cameraY;
+            float cameraY = 2 * y / (float)_screenHeight - 1; //y-coordinate in camera space
+            float rayDirX = camera.DirX + camera.PlaneX * cameraY;
+            float rayDirY = camera.DirY + camera.PlaneY * cameraY;
             //which box of the map we're in
             int mapX = (int)camera.PosX;
             int mapY = (int)camera.PosY;
 
-            double deltaDistX = (rayDirX == 0) ? 1e30 : Math.Abs(1 / rayDirX);
-            double deltaDistY = (rayDirY == 0) ? 1e30 : Math.Abs(1 / rayDirY);
+            float deltaDistX = (rayDirX == 0) ? 1e30f : Math.Abs(1 / rayDirX);
+            float deltaDistY = (rayDirY == 0) ? 1e30f : Math.Abs(1 / rayDirY);
 
             int stepX;
             int stepY;
-            double sideDistX;
-            double sideDistY;
+            float sideDistX;
+            float sideDistY;
 
             if (rayDirX < 0)
             {
@@ -58,7 +58,7 @@ public class Raycaster
             else
             {
                 stepX = 1;
-                sideDistX = (mapX + 1.0 - camera.PosX) * deltaDistX;
+                sideDistX = (mapX + 1.0f - camera.PosX) * deltaDistX;
             }
             if (rayDirY < 0)
             {
@@ -68,7 +68,7 @@ public class Raycaster
             else
             {
                 stepY = 1;
-                sideDistY = (mapY + 1.0 - camera.PosY) * deltaDistY;
+                sideDistY = (mapY + 1.0f - camera.PosY) * deltaDistY;
             }
 
             //DDA
@@ -93,7 +93,7 @@ public class Raycaster
                     hit = 1;
             }
 
-            double perpWallDist = side == 0
+            float perpWallDist = side == 0
                 ? (sideDistX - deltaDistX)
                 : (sideDistY - deltaDistY);
 
@@ -122,9 +122,9 @@ public class Raycaster
         int side,
         int drawStart,
         int drawEnd,
-        double perpWallDist,
-        double rayDirX,
-        double rayDirY,
+        float perpWallDist,
+        float rayDirX,
+        float rayDirY,
         int lineWidth)
     {
         var color = Color.Yellow;

@@ -39,26 +39,26 @@ public class TexturedRaycaster : Raycaster
         int side, 
         int drawStart, 
         int drawEnd,
-        double perpWallDist,
-        double rayDirX,
-        double rayDirY,
+        float perpWallDist,
+        float rayDirX,
+        float rayDirY,
         int lineWidth)
     {
         int texNum = _map[mapX][mapY] - 1;
         var textureData = _texturesData[texNum];
 
-        double wallY = (side == 0) ?
+        float wallY = (side == 0) ?
             camera.PosY + perpWallDist * rayDirY :
             camera.PosX + perpWallDist * rayDirX;
 
-        wallY -= Math.Floor(wallY);
+        wallY -= MathF.Floor(wallY);
 
         int texY = (int)(wallY * _texWidth);
         if (side == 0 && rayDirX > 0) texY = _mask - texY;
         else if (side == 1 && rayDirY < 0) texY = _mask - texY;
 
-        double step = 1.0 * _texWidth / lineWidth;
-        double texPos = (drawStart - _screenWidth * .5 + lineWidth * .5) * step;
+        float step = 1.0f * _texWidth / lineWidth;
+        float texPos = (drawStart - _screenWidth * .5f + lineWidth * .5f) * step;
         
         var sourceStart = _texHeight * texY;
         var sourceData = textureData.AsSpan(sourceStart, textureData.Length - sourceStart);

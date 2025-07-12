@@ -10,8 +10,8 @@ public class RaycasterGame : Game
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
-    private const int ScreenWidth = 1024; //2048; 
-    private const int ScreenHeight = 768;//1536;
+    private const int ScreenWidth = 2048;//1024; 
+    private const int ScreenHeight = 1536;//768;
 
     private readonly static Vector2 _halfScreenSize = new(ScreenWidth / 2, ScreenHeight / 2);
 
