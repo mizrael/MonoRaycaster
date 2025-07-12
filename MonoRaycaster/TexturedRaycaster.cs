@@ -54,11 +54,11 @@ public class TexturedRaycaster : Raycaster
         wallY -= Math.Floor(wallY);
 
         int texY = (int)(wallY * _texWidth);
-        if (side == 0 && rayDirX > 0) texY = _texWidth - texY - 1;
-        if (side == 1 && rayDirY < 0) texY = _texWidth - texY - 1;
+        if (side == 0 && rayDirX > 0) texY = _mask - texY;
+        else if (side == 1 && rayDirY < 0) texY = _mask - texY;
 
         double step = 1.0 * _texWidth / lineWidth;
-        double texPos = (drawStart - _screenWidth / 2 + lineWidth / 2) * step;
+        double texPos = (drawStart - _screenWidth * .5 + lineWidth * .5) * step;
         
         var sourceStart = _texHeight * texY;
         var sourceData = textureData.AsSpan(sourceStart, textureData.Length - sourceStart);
@@ -66,7 +66,7 @@ public class TexturedRaycaster : Raycaster
 
         int destDataStartIndex = y * _screenWidth + drawStart;
         var destRowData = destBuffer.Slice(destDataStartIndex, drawLen);
-        
+
         for (int x = 0; x != drawLen; x++)
         {
             int texX = ((int)texPos) & _mask;
