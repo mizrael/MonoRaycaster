@@ -17,8 +17,7 @@ public class TexturedRaycaster : Raycaster
         int screenHeight,
         Texture2D[] textures
         ) : base(map, screenWidth, screenHeight)
-    {
-       
+    {       
         _texWidth = textures[0].Width;
         _texHeight = textures[0].Height;
         _mask = _texWidth - 1;
@@ -32,7 +31,8 @@ public class TexturedRaycaster : Raycaster
     }
 
     protected override void UpdateRow(
-        Span<Color> destBuffer, 
+        Span<Color> span,
+        Camera camera, 
         int y, 
         int mapX, 
         int mapY, 
@@ -48,8 +48,8 @@ public class TexturedRaycaster : Raycaster
         var textureData = _texturesData[texNum];
 
         double wallY = (side == 0) ?
-            _posY + perpWallDist * rayDirY :
-            _posX + perpWallDist * rayDirX;
+            camera.PosY + perpWallDist * rayDirY :
+            camera.PosX + perpWallDist * rayDirX;
 
         wallY -= Math.Floor(wallY);
 
@@ -62,10 +62,10 @@ public class TexturedRaycaster : Raycaster
         
         var sourceStart = _texHeight * texY;
         var sourceData = textureData.AsSpan(sourceStart, textureData.Length - sourceStart);
-        int drawLen = drawEnd - drawStart + 1;
 
+        int drawLen = drawEnd - drawStart + 1;
         int destDataStartIndex = y * _screenWidth + drawStart;
-        var destRowData = destBuffer.Slice(destDataStartIndex, drawLen);
+        var destRowData = span.Slice(destDataStartIndex, drawLen);
 
         for (int x = 0; x != drawLen; x++)
         {

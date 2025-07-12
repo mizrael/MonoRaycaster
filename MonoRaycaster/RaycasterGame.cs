@@ -48,6 +48,7 @@ public class RaycasterGame : Game
     ];
 
     private readonly FrameCounter _frameCounter = new();
+    private Camera _camera;
 
     private Texture2D _frameTexture;
     private Raycaster _raycaster;
@@ -78,6 +79,8 @@ public class RaycasterGame : Game
 
         _frameTexture = new Texture2D(GraphicsDevice, FrameBufferWidth, FrameBufferHeight);
 
+        _camera = new(_map);
+
         var mainTexture = Content.Load<Texture2D>("wolftextures");
         var textures = mainTexture.Split(64, 64).Select(t => t.Rotate90(RotationDirection.CounterClockwise)).ToArray();
         _raycaster = new TexturedRaycaster(_map, FrameBufferWidth, FrameBufferHeight, textures);
@@ -90,7 +93,9 @@ public class RaycasterGame : Game
         if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
 
-        _raycaster.Update(gameTime);
+        _camera.Update(gameTime);
+
+        _raycaster.Update(_camera);
         _frameTexture.SetData(_raycaster.FrameBuffer);
 
         base.Update(gameTime);

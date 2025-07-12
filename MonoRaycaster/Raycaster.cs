@@ -1,5 +1,4 @@
 ﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using System;
 
 namespace MonoRaycaster;
@@ -11,13 +10,6 @@ namespace MonoRaycaster;
 /// </summary>
 public class Raycaster
 {
-    protected double _posX = 22; // player position X
-    protected double _posY = 12; // player position Y
-    private double _dirX = 0; // initial direction vector X (rotated 90 degrees)
-    private double _dirY = -1; // initial direction vector Y (rotated 90 degrees)
-    private double _planeX = .66; // the 2D raycaster version of camera plane X (rotated 90 degrees)
-    private double _planeY = 0; // the 2D raycaster version of camera plane Y (rotated 90 degrees)
-
     public readonly Color[] FrameBuffer;
 
     protected readonly int[][] _map;
@@ -25,86 +17,17 @@ public class Raycaster
     protected readonly int _screenWidth;
     protected readonly int _screenHeight;
 
-    private readonly int _mapWidth;
-    private readonly int _mapHeight;
-
     public Raycaster(int[][] map, int screenWidth, int screenHeight)
     {
         _screenWidth = screenWidth;
         _screenHeight = screenHeight;
 
         _map = map;
-        _mapWidth = map.Length;
-        _mapHeight = map[0].Length;
 
         FrameBuffer = new Color[screenWidth * screenHeight];
     }
 
-    public void Update(GameTime gameTime)
-    {
-        UpdateCamera(gameTime);
-
-        UpdateFrameBuffer();
-    }
-
-    private void UpdateCamera(GameTime gameTime)
-    {
-        double moveSpeed = gameTime.ElapsedGameTime.TotalMilliseconds * .015f;
-        double rotSpeed = gameTime.ElapsedGameTime.TotalMilliseconds * .005f;
-
-        var keyboardState = Keyboard.GetState();
-
-        var nextPosX = _posX;
-        var nextPosY = _posY;
-
-        if (keyboardState.IsKeyDown(Keys.W))
-        {
-            nextPosX = _posX + _dirX * moveSpeed;
-            nextPosY = _posY + _dirY * moveSpeed;
-        }
-        else if (keyboardState.IsKeyDown(Keys.S))
-        {
-            nextPosX = _posX - _dirX * moveSpeed;
-            nextPosY = _posY - _dirY * moveSpeed;
-        }
-
-        if (nextPosX >= 0 && nextPosX < _mapWidth &&
-            nextPosY >= 0 && nextPosY < _mapHeight &&
-            _map[(int)nextPosX][(int)nextPosY] == 0)
-        {
-            _posX = nextPosX;
-            _posY = nextPosY;
-        }
-
-        if (keyboardState.IsKeyDown(Keys.D))
-        {
-            double oldDirX = _dirX;
-            var cos = Math.Cos(-rotSpeed);
-            var sin = Math.Sin(-rotSpeed);
-
-            _dirX = _dirX * cos - _dirY * sin;
-            _dirY = oldDirX * sin + _dirY * cos;
-
-            double oldPlaneX = _planeX;
-            _planeX = _planeX * cos - _planeY * sin;
-            _planeY = oldPlaneX * sin + _planeY * cos;
-        }
-        else if (keyboardState.IsKeyDown(Keys.A))
-        {
-            double oldDirX = _dirX;
-            var cos = Math.Cos(rotSpeed);
-            var sin = Math.Sin(rotSpeed);
-
-            _dirX = _dirX * cos - _dirY * sin;
-            _dirY = oldDirX * sin + _dirY * cos;
-
-            double oldPlaneX = _planeX;
-            _planeX = _planeX * cos - _planeY * sin;
-            _planeY = oldPlaneX * sin + _planeY * cos;
-        }
-    }
-
-    private void UpdateFrameBuffer()
+    public void Update(Camera camera)
     {
         var span = FrameBuffer.AsSpan();
         span.Fill(Color.Transparent);
@@ -113,11 +36,11 @@ public class Raycaster
         {
             //calculate ray position and direction
             double cameraY = 2 * y / (double)_screenHeight - 1; //y-coordinate in camera space
-            double rayDirX = _dirX + _planeX * cameraY;
-            double rayDirY = _dirY + _planeY * cameraY;
+            double rayDirX = camera.DirX + camera.PlaneX * cameraY;
+            double rayDirY = camera.DirY + camera.PlaneY * cameraY;
             //which box of the map we're in
-            int mapX = (int)_posX;
-            int mapY = (int)_posY;
+            int mapX = (int)camera.PosX;
+            int mapY = (int)camera.PosY;
 
             double deltaDistX = (rayDirX == 0) ? 1e30 : Math.Abs(1 / rayDirX);
             double deltaDistY = (rayDirY == 0) ? 1e30 : Math.Abs(1 / rayDirY);
@@ -130,22 +53,22 @@ public class Raycaster
             if (rayDirX < 0)
             {
                 stepX = -1;
-                sideDistX = (_posX - mapX) * deltaDistX;
+                sideDistX = (camera.PosX - mapX) * deltaDistX;
             }
             else
             {
                 stepX = 1;
-                sideDistX = (mapX + 1.0 - _posX) * deltaDistX;
+                sideDistX = (mapX + 1.0 - camera.PosX) * deltaDistX;
             }
             if (rayDirY < 0)
             {
                 stepY = -1;
-                sideDistY = (_posY - mapY) * deltaDistY;
+                sideDistY = (camera.PosY - mapY) * deltaDistY;
             }
             else
             {
                 stepY = 1;
-                sideDistY = (mapY + 1.0 - _posY) * deltaDistY;
+                sideDistY = (mapY + 1.0 - camera.PosY) * deltaDistY;
             }
 
             //DDA
@@ -186,12 +109,13 @@ public class Raycaster
 
             int length = drawEnd - drawStart + 1;
             if (length != 0)
-                UpdateRow(span, y, mapX, mapY, side, drawStart, drawEnd, perpWallDist, rayDirX, rayDirY, lineWidth);
+                UpdateRow(span, camera, y, mapX, mapY, side, drawStart, drawEnd, perpWallDist, rayDirX, rayDirY, lineWidth);
         }
     }
 
     protected virtual void UpdateRow(
         Span<Color> span,
+        Camera camera,
         int y,
         int mapX,
         int mapY,
