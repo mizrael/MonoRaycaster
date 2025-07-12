@@ -30,7 +30,7 @@ public class Raycaster
     public void Update(Camera camera)
     {
         var span = FrameBuffer.AsSpan();
-        span.Fill(Color.Transparent);
+        span.Clear();
 
         for (int y = 0; y < _screenHeight; y++)
         {
