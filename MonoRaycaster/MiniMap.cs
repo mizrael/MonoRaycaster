@@ -7,6 +7,7 @@ namespace MonoRaycaster;
 public class MiniMap
 {
     private readonly int[][] _map;
+    private readonly Camera _camera;
     private readonly int _cols;
     private readonly int _rows;
     private readonly int _cellWidth;
@@ -18,10 +19,11 @@ public class MiniMap
         int[][] map, 
         int frameWidth, 
         int frameHeight,
-        GraphicsDevice graphicsDevice)
+        GraphicsDevice graphicsDevice,
+        Camera camera)
     {
         _map = map;
-
+        _camera = camera;
         _rows = _map.Length;
         _cols = _map[0].Length;
 
@@ -64,5 +66,12 @@ public class MiniMap
                     _cellHeight);
                 spriteBatch.Draw(_texture, dest, color);
             }
+
+        var cameraRect = new Rectangle(
+            (int)_camera.PosX * _cellWidth,
+            (int)_camera.PosY * _cellHeight,
+            _cellWidth / 2,
+            _cellHeight / 2);
+        spriteBatch.Draw(_texture, cameraRect, Color.Black);
     }
 }

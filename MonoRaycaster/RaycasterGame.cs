@@ -88,7 +88,7 @@ public class RaycasterGame : Game
 
         _font = Content.Load<SpriteFont>("Font");
 
-        _miniMap = new MiniMap(_map, 800, 600, GraphicsDevice);
+        _miniMap = new MiniMap(_map, 800, 600, GraphicsDevice, _camera);
     }
 
     protected override void Update(GameTime gameTime)
