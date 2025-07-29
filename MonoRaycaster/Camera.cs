@@ -6,23 +6,18 @@ namespace MonoRaycaster;
 
 public class Camera
 {
-    private float _posX = 22; 
-    private float _posY = 12; 
-    private float _dirX = 0; 
-    private float _dirY = -1; 
-    private float _planeX = .66f; 
-    private float _planeY = 0;
+    private float _posX = 18; 
+    private float _posY = 3; 
+    private float _dirX = -1; 
+    private float _dirY = 0;
+    private float _planeX = 0;
+    private float _planeY = .66f;
 
-    private readonly int[][] _map;
+    private readonly Map _map;
 
-    private readonly int _mapWidth;
-    private readonly int _mapHeight;
-
-    public Camera(int[][] map)
+    public Camera(Map map)
     {
         _map = map;
-        _mapWidth = map.Length;
-        _mapHeight = map[0].Length;
     }
 
     public void Update(GameTime gameTime)
@@ -47,15 +42,15 @@ public class Camera
             nextPosY = _posY - _dirY * moveSpeed;
         }
 
-        if (nextPosX >= 0 && nextPosX < _mapWidth &&
-            nextPosY >= 0 && nextPosY < _mapHeight &&
-            _map[(int)nextPosX][(int)nextPosY] == 0)
+        if (nextPosX >= 0 && nextPosX < _map.Cols &&
+            nextPosY >= 0 && nextPosY < _map.Rows &&
+            _map.Cells[(int)nextPosY][(int)nextPosX] == 0)
         {
             _posX = nextPosX;
             _posY = nextPosY;
         }
 
-        if (keyboardState.IsKeyDown(Keys.D))
+        if (keyboardState.IsKeyDown(Keys.A))
         {
             float oldDirX = _dirX;
             var cos = MathF.Cos(-rotSpeed);
@@ -68,7 +63,7 @@ public class Camera
             _planeX = _planeX * cos - _planeY * sin;
             _planeY = oldPlaneX * sin + _planeY * cos;
         }
-        else if (keyboardState.IsKeyDown(Keys.A))
+        else if (keyboardState.IsKeyDown(Keys.D))
         {
             float oldDirX = _dirX;
             var cos = MathF.Cos(rotSpeed);

@@ -12,7 +12,7 @@ public class TexturedRaycaster : Raycaster
     private readonly int _mask;
 
     public TexturedRaycaster(
-        int[][] map,
+        Map map,
         int screenWidth,
         int screenHeight,
         Texture2D[] textures
@@ -44,7 +44,7 @@ public class TexturedRaycaster : Raycaster
         float rayDirY,
         int lineWidth)
     {
-        int texNum = _map[mapX][mapY] - 1;
+        int texNum = _map.Cells[mapX][mapY] - 1;
         var textureData = _texturesData[texNum];
 
         float wallY = (side == 0) ?

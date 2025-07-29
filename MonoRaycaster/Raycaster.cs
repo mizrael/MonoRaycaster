@@ -12,12 +12,12 @@ public class Raycaster
 {
     public readonly Color[] FrameBuffer;
 
-    protected readonly int[][] _map;
+    protected readonly Map _map;
 
     protected readonly int _frameWidth;
     protected readonly int _frameHeight;
 
-    public Raycaster(int[][] map, int frameWidth, int frameHeight)
+    public Raycaster(Map map, int frameWidth, int frameHeight)
     {
         _frameWidth = frameWidth;
         _frameHeight = frameHeight;
@@ -61,6 +61,7 @@ public class Raycaster
                 stepX = 1;
                 sideDistX = (mapX + 1.0f - camera.PosX) * deltaDistX;
             }
+
             if (rayDirY < 0)
             {
                 stepY = -1;
@@ -90,7 +91,7 @@ public class Raycaster
                     side = 1;
                 }
 
-                if (_map[mapX][mapY] > 0)
+                if (_map.Cells[mapY][mapX] > 0)
                     hit = 1;
             }
 
@@ -109,7 +110,7 @@ public class Raycaster
                 drawEnd = _frameWidth - 1;
 
             int length = drawEnd - drawStart + 1;
-            if (length != 0)
+            if (length > 0)
                 UpdateRow(span, camera, y, mapX, mapY, side, drawStart, drawEnd, perpWallDist, rayDirX, rayDirY, lineWidth);
         }
     }
@@ -128,15 +129,8 @@ public class Raycaster
         float rayDirY,
         int lineWidth)
     {
-        var color = Color.Yellow;
-        color = _map[mapX][mapY] switch
-        {
-            1 => Color.Red,
-            2 => Color.Green,
-            3 => Color.Blue,
-            4 => Color.White,
-            _ => Color.Yellow,
-        };
+        var cell = _map.Cells[mapY][mapX];
+        var color = _map.CellColors[cell];
         if (side == 1)
             color = color * .5f;
 
