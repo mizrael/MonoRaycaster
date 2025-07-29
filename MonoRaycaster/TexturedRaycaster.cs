@@ -44,7 +44,7 @@ public class TexturedRaycaster : Raycaster
         float rayDirY,
         int lineWidth)
     {
-        int texNum = _map.Cells[mapX][mapY] - 1;
+        int texNum = _map.Cells[mapY][mapX] - 1;
         var textureData = _texturesData[texNum];
 
         float wallY = (side == 0) ?
