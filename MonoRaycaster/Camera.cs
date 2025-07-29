@@ -11,7 +11,7 @@ public class Camera
     private float _dirX = -1; 
     private float _dirY = 0;
     private float _planeX = 0;
-    private float _planeY = .66f;
+    private float _planeY = .45f;
 
     private readonly Map _map;
 
