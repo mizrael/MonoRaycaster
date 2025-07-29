@@ -52,6 +52,7 @@ public class RaycasterGame : Game
 
     private Texture2D _frameTexture;
     private Raycaster _raycaster;
+    private MiniMap _miniMap;
 
     private SpriteFont _font;
 
@@ -86,6 +87,8 @@ public class RaycasterGame : Game
         _raycaster = new TexturedRaycaster(_map, FrameBufferWidth, FrameBufferHeight, textures);
 
         _font = Content.Load<SpriteFont>("Font");
+
+        _miniMap = new MiniMap(_map, 800, 600, GraphicsDevice);
     }
 
     protected override void Update(GameTime gameTime)
@@ -109,6 +112,7 @@ public class RaycasterGame : Game
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
         _spriteBatch.Begin();
+
         _spriteBatch.Draw(
             _frameTexture,
             position: _halfScreenSize, 
@@ -119,6 +123,8 @@ public class RaycasterGame : Game
             scale: 1f,
             effects: SpriteEffects.None,
             layerDepth: 0);
+
+        _miniMap.Render(_spriteBatch);
         _spriteBatch.End();
 
         var text = string.Format("FPS: {0}", _frameCounter.AverageFramesPerSecond);
