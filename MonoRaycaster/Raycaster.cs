@@ -14,17 +14,17 @@ public class Raycaster
 
     protected readonly int[][] _map;
 
-    protected readonly int _screenWidth;
-    protected readonly int _screenHeight;
+    protected readonly int _frameWidth;
+    protected readonly int _frameHeight;
 
-    public Raycaster(int[][] map, int screenWidth, int screenHeight)
+    public Raycaster(int[][] map, int frameWidth, int frameHeight)
     {
-        _screenWidth = screenWidth;
-        _screenHeight = screenHeight;
+        _frameWidth = frameWidth;
+        _frameHeight = frameHeight;
 
         _map = map;
 
-        FrameBuffer = new Color[screenWidth * screenHeight];
+        FrameBuffer = new Color[frameWidth * frameHeight];
     }
 
     public void Update(Camera camera)
@@ -32,12 +32,13 @@ public class Raycaster
         var span = FrameBuffer.AsSpan();
         span.Clear();
 
-        for (int y = 0; y < _screenHeight; y++)
+        for (int y = 0; y < _frameHeight; y++)
         {
             //calculate ray position and direction
-            float cameraY = 2 * y / (float)_screenHeight - 1; //y-coordinate in camera space
+            float cameraY = 2 * y / (float)_frameHeight - 1; //y-coordinate in camera space
             float rayDirX = camera.DirX + camera.PlaneX * cameraY;
             float rayDirY = camera.DirY + camera.PlaneY * cameraY;
+
             //which box of the map we're in
             int mapX = (int)camera.PosX;
             int mapY = (int)camera.PosY;
@@ -97,15 +98,15 @@ public class Raycaster
                 ? (sideDistX - deltaDistX)
                 : (sideDistY - deltaDistY);
 
-            int lineWidth = (int)(_screenWidth / perpWallDist);
+            int lineWidth = (int)(_frameWidth / perpWallDist);
 
-            int drawStart = (-lineWidth + _screenWidth) / 2;
+            int drawStart = (-lineWidth + _frameWidth) / 2;
             if (drawStart < 0)
                 drawStart = 0;
 
-            int drawEnd = (lineWidth + _screenWidth) / 2;
-            if (drawEnd >= _screenWidth)
-                drawEnd = _screenWidth - 1;
+            int drawEnd = (lineWidth + _frameWidth) / 2;
+            if (drawEnd >= _frameWidth)
+                drawEnd = _frameWidth - 1;
 
             int length = drawEnd - drawStart + 1;
             if (length != 0)
@@ -140,7 +141,7 @@ public class Raycaster
             color = color * .5f;
 
         int length = drawEnd - drawStart + 1;
-        int row = y * _screenWidth;
+        int row = y * _frameWidth;
         span.Slice(row + drawStart, length).Fill(color);
     }
 }

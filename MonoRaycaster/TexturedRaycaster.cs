@@ -58,13 +58,13 @@ public class TexturedRaycaster : Raycaster
         else if (side == 1 && rayDirY < 0) texY = _mask - texY;
 
         float step = 1.0f * _texWidth / lineWidth;
-        float texPos = (drawStart - _screenWidth * .5f + lineWidth * .5f) * step;
+        float texPos = (drawStart - _frameWidth * .5f + lineWidth * .5f) * step;
         
         var sourceStart = _texHeight * texY;
         var sourceData = textureData.AsSpan(sourceStart, textureData.Length - sourceStart);
 
         int drawLen = drawEnd - drawStart + 1;
-        int destDataStartIndex = y * _screenWidth + drawStart;
+        int destDataStartIndex = y * _frameWidth + drawStart;
         var destRowData = span.Slice(destDataStartIndex, drawLen);
 
         for (int x = 0; x != drawLen; x++)
