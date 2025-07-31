@@ -8,23 +8,26 @@ public class MiniMap
 {
     private readonly Map _map;
     private readonly Camera _camera;
-    
+
     private readonly int _cellWidth;
     private readonly int _cellHeight;
     private readonly Texture2D _texture;
     private readonly Vector2 _cellCenter;
+    private readonly int _rayCount;
 
     public MiniMap(
-        Map map, 
-        int frameWidth, 
+        Map map,
+        int frameWidth,
         int frameHeight,
         GraphicsDevice graphicsDevice,
-        Camera camera)
+        Camera camera,
+        int rayCount = 320)
     {
         _map = map;
         _camera = camera;
+        _rayCount = rayCount;
 
-        _cellWidth = frameWidth / _map.Cols; 
+        _cellWidth = frameWidth / _map.Cols;
         _cellHeight = frameHeight / _map.Rows;
 
         _cellCenter = new Vector2(_cellWidth, _cellHeight) * .25f;
@@ -61,19 +64,25 @@ public class MiniMap
             effects: SpriteEffects.None,
             layerDepth: 0);
 
-        var thickness = 4f;
+        var thickness = 2f;
         var startPos = cameraPos + _cellCenter;
-        var rayDir = new Vector2(_camera.DirX, _camera.DirY);
-        var endPos = FindInterceptionPoint(rayDir);
-        DrawLine(spriteBatch, endPos, startPos, thickness);
+        RenderFieldOfViewCone(spriteBatch, startPos, thickness);
+    }
 
-        rayDir = new Vector2((_camera.DirX - _camera.PlaneX), (_camera.DirY - _camera.PlaneY));
-        endPos = FindInterceptionPoint(rayDir);
-        DrawLine(spriteBatch, endPos, startPos, thickness);
+    private void RenderFieldOfViewCone(SpriteBatch spriteBatch, Vector2 startPos, float thickness)
+    {
+        for (int i = 0; i < _rayCount; i++)
+        {
+            float offset = 2 * i / (float)(_rayCount - 1) - 1;
 
-        rayDir = new Vector2((_camera.DirX + _camera.PlaneX), (_camera.DirY + _camera.PlaneY));
-        endPos = FindInterceptionPoint(rayDir);
-        DrawLine(spriteBatch, endPos, startPos, thickness);
+            var rayDir = new Vector2(
+                _camera.DirX + _camera.PlaneX * offset,
+                _camera.DirY + _camera.PlaneY * offset);
+
+            var endPos = FindInterceptionPoint(rayDir);
+
+            spriteBatch.DrawLine(_texture, startPos, endPos, thickness, Color.Red);
+        }
     }
 
     private Vector2 FindInterceptionPoint(Vector2 rayDir)
@@ -112,7 +121,7 @@ public class MiniMap
         }
 
         bool hit = false;
-        bool isHorizontalWall = false; 
+        bool isHorizontalWall = false;
         while (!hit)
         {
             if (sideDistX < sideDistY)
@@ -137,7 +146,7 @@ public class MiniMap
             : (sideDistY - deltaDistY);
 
         float wallX, wallY;
-        if (!isHorizontalWall) 
+        if (!isHorizontalWall)
         {
             wallX = mapX + (stepX < 0 ? 1.0f : 0.0f);
             wallY = _camera.PosY + perpWallDist * rayDir.Y;
@@ -149,23 +158,5 @@ public class MiniMap
         }
 
         return new Vector2(wallX * _cellWidth, wallY * _cellHeight);
-    }
-
-    private void DrawLine(SpriteBatch spriteBatch, Vector2 endPos, Vector2 startPos, float thickness)
-    {
-        var rotation = (float)Math.Atan2(endPos.Y - startPos.Y, endPos.X - startPos.X);
-        var length = Vector2.Distance(endPos, startPos);
-        var scale = new Vector2(length, thickness);
-
-        spriteBatch.Draw(
-            _texture,
-            startPos,
-            sourceRectangle: null,
-            color: Color.Red,
-            rotation: rotation,
-            origin: Vector2.Zero,
-            scale: scale,
-            effects: SpriteEffects.None,
-            layerDepth: 0);
     }
 }
