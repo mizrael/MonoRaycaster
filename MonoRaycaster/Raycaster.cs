@@ -74,9 +74,9 @@ public class Raycaster
             }
 
             //DDA
-            int hit = 0;
+            bool hit = false;
             int side = 0;
-            while (hit == 0)
+            while (!hit)
             {
                 if (sideDistX < sideDistY)
                 {
@@ -92,7 +92,7 @@ public class Raycaster
                 }
 
                 if (_map.Cells[mapY][mapX] > 0)
-                    hit = 1;
+                    hit = true;
             }
 
             float perpWallDist = side == 0
