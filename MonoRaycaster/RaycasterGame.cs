@@ -20,38 +20,14 @@ public class RaycasterGame : Game
     private const int FrameBufferHeight = ScreenWidth;
     private readonly static Vector2 _halfFrameBufferSize = new(FrameBufferWidth / 2, FrameBufferHeight / 2);
 
-    private int[][] _map = [
-      [ 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-      [ 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,0,0,0,0,0,2,2,2,2,2,0,0,0,0,3,0,3,0,3,0,0,0,1],
-      [ 1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,3,0,0,0,3,0,0,0,1],
-      [ 1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,0,0,0,0,0,2,2,0,2,2,0,0,0,0,3,0,3,0,3,0,0,0,1],
-      [ 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,4,0,0,0,0,5,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,4,0,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [ 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-    ];
+    private Map _map;
 
     private readonly FrameCounter _frameCounter = new();
     private Camera _camera;
 
     private Texture2D _frameTexture;
     private Raycaster _raycaster;
+    private MiniMap _miniMap;
 
     private SpriteFont _font;
 
@@ -79,13 +55,19 @@ public class RaycasterGame : Game
 
         _frameTexture = new Texture2D(GraphicsDevice, FrameBufferWidth, FrameBufferHeight);
 
+        _map = new Map();
+
         _camera = new(_map);
 
         var mainTexture = Content.Load<Texture2D>("wolftextures");
         var textures = mainTexture.Split(64, 64).Select(t => t.Rotate90(RotationDirection.CounterClockwise)).ToArray();
         _raycaster = new TexturedRaycaster(_map, FrameBufferWidth, FrameBufferHeight, textures);
 
+        // _raycaster = new Raycaster(_map, FrameBufferWidth, FrameBufferHeight);
+
         _font = Content.Load<SpriteFont>("Font");
+
+        _miniMap = new MiniMap(_map, 800, 600, GraphicsDevice, _camera);
     }
 
     protected override void Update(GameTime gameTime)
@@ -109,19 +91,25 @@ public class RaycasterGame : Game
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
         _spriteBatch.Begin();
+
         _spriteBatch.Draw(
             _frameTexture,
-            position: _halfScreenSize, 
+            position: _halfScreenSize,
             sourceRectangle: null,
-            color: Color.White, 
-            rotation: MathHelper.PiOver2, 
+            color: Color.White,
+            rotation: MathHelper.PiOver2,
             origin: _halfFrameBufferSize,
             scale: 1f,
             effects: SpriteEffects.None,
             layerDepth: 0);
+
+        _miniMap.Render(_spriteBatch);
         _spriteBatch.End();
 
-        var text = string.Format("FPS: {0}", _frameCounter.AverageFramesPerSecond);
+        var text = string.Format("FPS: {0}\nCamera {1} - {2}\nTile {3},{4}", 
+                                _frameCounter.AverageFramesPerSecond,
+                                _camera.Position.X, _camera.Position.Y,
+                                (int)_camera.Position.X, (int)_camera.Position.Y);
         _spriteBatch.Begin();
         _spriteBatch.DrawString(_font, text, Vector2.Zero, Color.White,
                                0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);

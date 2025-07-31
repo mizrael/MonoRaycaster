@@ -12,19 +12,19 @@ public class Raycaster
 {
     public readonly Color[] FrameBuffer;
 
-    protected readonly int[][] _map;
+    protected readonly Map _map;
 
-    protected readonly int _screenWidth;
-    protected readonly int _screenHeight;
+    protected readonly int _frameWidth;
+    protected readonly int _frameHeight;
 
-    public Raycaster(int[][] map, int screenWidth, int screenHeight)
+    public Raycaster(Map map, int frameWidth, int frameHeight)
     {
-        _screenWidth = screenWidth;
-        _screenHeight = screenHeight;
+        _frameWidth = frameWidth;
+        _frameHeight = frameHeight;
 
         _map = map;
 
-        FrameBuffer = new Color[screenWidth * screenHeight];
+        FrameBuffer = new Color[frameWidth * frameHeight];
     }
 
     public void Update(Camera camera)
@@ -32,15 +32,16 @@ public class Raycaster
         var span = FrameBuffer.AsSpan();
         span.Clear();
 
-        for (int y = 0; y < _screenHeight; y++)
+        for (int y = 0; y < _frameHeight; y++)
         {
             //calculate ray position and direction
-            float cameraY = 2 * y / (float)_screenHeight - 1; //y-coordinate in camera space
-            float rayDirX = camera.DirX + camera.PlaneX * cameraY;
-            float rayDirY = camera.DirY + camera.PlaneY * cameraY;
+            float cameraY = 2 * y / (float)_frameHeight - 1; //y-coordinate in camera space
+            float rayDirX = camera.Direction.X + camera.Plane.X * cameraY;
+            float rayDirY = camera.Direction.Y + camera.Plane.Y * cameraY;
+
             //which box of the map we're in
-            int mapX = (int)camera.PosX;
-            int mapY = (int)camera.PosY;
+            int mapX = (int)camera.Position.X;
+            int mapY = (int)camera.Position.Y;
 
             float deltaDistX = (rayDirX == 0) ? 1e30f : Math.Abs(1 / rayDirX);
             float deltaDistY = (rayDirY == 0) ? 1e30f : Math.Abs(1 / rayDirY);
@@ -53,28 +54,29 @@ public class Raycaster
             if (rayDirX < 0)
             {
                 stepX = -1;
-                sideDistX = (camera.PosX - mapX) * deltaDistX;
+                sideDistX = (camera.Position.X - mapX) * deltaDistX;
             }
             else
             {
                 stepX = 1;
-                sideDistX = (mapX + 1.0f - camera.PosX) * deltaDistX;
+                sideDistX = (mapX + 1.0f - camera.Position.X) * deltaDistX;
             }
+
             if (rayDirY < 0)
             {
                 stepY = -1;
-                sideDistY = (camera.PosY - mapY) * deltaDistY;
+                sideDistY = (camera.Position.Y - mapY) * deltaDistY;
             }
             else
             {
                 stepY = 1;
-                sideDistY = (mapY + 1.0f - camera.PosY) * deltaDistY;
+                sideDistY = (mapY + 1.0f - camera.Position.Y) * deltaDistY;
             }
 
             //DDA
-            int hit = 0;
+            bool hit = false;
             int side = 0;
-            while (hit == 0)
+            while (!hit)
             {
                 if (sideDistX < sideDistY)
                 {
@@ -89,26 +91,26 @@ public class Raycaster
                     side = 1;
                 }
 
-                if (_map[mapX][mapY] > 0)
-                    hit = 1;
+                if (_map.Cells[mapY][mapX] > 0)
+                    hit = true;
             }
 
             float perpWallDist = side == 0
                 ? (sideDistX - deltaDistX)
                 : (sideDistY - deltaDistY);
 
-            int lineWidth = (int)(_screenWidth / perpWallDist);
+            int lineWidth = (int)(_frameWidth / perpWallDist);
 
-            int drawStart = (-lineWidth + _screenWidth) / 2;
+            int drawStart = (-lineWidth + _frameWidth) / 2;
             if (drawStart < 0)
                 drawStart = 0;
 
-            int drawEnd = (lineWidth + _screenWidth) / 2;
-            if (drawEnd >= _screenWidth)
-                drawEnd = _screenWidth - 1;
+            int drawEnd = (lineWidth + _frameWidth) / 2;
+            if (drawEnd >= _frameWidth)
+                drawEnd = _frameWidth - 1;
 
             int length = drawEnd - drawStart + 1;
-            if (length != 0)
+            if (length > 0)
                 UpdateRow(span, camera, y, mapX, mapY, side, drawStart, drawEnd, perpWallDist, rayDirX, rayDirY, lineWidth);
         }
     }
@@ -127,20 +129,13 @@ public class Raycaster
         float rayDirY,
         int lineWidth)
     {
-        var color = Color.Yellow;
-        color = _map[mapX][mapY] switch
-        {
-            1 => Color.Red,
-            2 => Color.Green,
-            3 => Color.Blue,
-            4 => Color.White,
-            _ => Color.Yellow,
-        };
+        var cell = _map.Cells[mapY][mapX];
+        var color = _map.CellColors[cell];
         if (side == 1)
             color = color * .5f;
 
         int length = drawEnd - drawStart + 1;
-        int row = y * _screenWidth;
+        int row = y * _frameWidth;
         span.Slice(row + drawStart, length).Fill(color);
     }
 }

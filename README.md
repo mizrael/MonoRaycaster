@@ -11,3 +11,6 @@ The base implementation with no textures uses a `Color` framebuffer, rotated by 
 The textured implementation still renders the map rotated by 90 degrees, and applies some caching strategies to minimize I/O operations.
 
 ![](textures.jpg)
+
+It is also possible to render a minimap showing the view cone:
+![minimap](minimap.jpg)
