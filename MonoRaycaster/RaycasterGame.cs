@@ -94,10 +94,10 @@ public class RaycasterGame : Game
 
         _spriteBatch.Draw(
             _frameTexture,
-            position: _halfScreenSize, 
+            position: _halfScreenSize,
             sourceRectangle: null,
-            color: Color.White, 
-            rotation: MathHelper.PiOver2, 
+            color: Color.White,
+            rotation: MathHelper.PiOver2,
             origin: _halfFrameBufferSize,
             scale: 1f,
             effects: SpriteEffects.None,
@@ -108,8 +108,8 @@ public class RaycasterGame : Game
 
         var text = string.Format("FPS: {0}\nCamera {1} - {2}\nTile {3},{4}", 
                                 _frameCounter.AverageFramesPerSecond,
-                                _camera.PosX, _camera.PosY,
-                                (int)_camera.PosX, (int)_camera.PosY);
+                                _camera.Position.X, _camera.Position.Y,
+                                (int)_camera.Position.X, (int)_camera.Position.Y);
         _spriteBatch.Begin();
         _spriteBatch.DrawString(_font, text, Vector2.Zero, Color.White,
                                0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
