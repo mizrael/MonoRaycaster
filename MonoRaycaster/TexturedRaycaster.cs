@@ -48,8 +48,8 @@ public class TexturedRaycaster : Raycaster
         var textureData = _texturesData[texNum];
 
         float wallY = (side == 0) ?
-            camera.PosY + perpWallDist * rayDirY :
-            camera.PosX + perpWallDist * rayDirX;
+            camera.Position.Y + perpWallDist * rayDirY :
+            camera.Position.X + perpWallDist * rayDirX;
 
         wallY -= MathF.Floor(wallY);
 

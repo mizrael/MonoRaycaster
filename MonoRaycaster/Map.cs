@@ -60,10 +60,10 @@ public class Map
         }
     }
 
-    public Vector2 FindInterceptionPoint(Camera camera, Vector2 rayDir)
+    public Vector2 FindInterceptionPoint(Vector2 rayStart, Vector2 rayDir)
     {
-        int mapX = (int)camera.PosX;
-        int mapY = (int)camera.PosY;
+        int mapX = (int)rayStart.X;
+        int mapY = (int)rayStart.Y;
 
         float deltaDistX = (rayDir.X == 0) ? 1e30f : Math.Abs(1 / rayDir.X);
         float deltaDistY = (rayDir.Y == 0) ? 1e30f : Math.Abs(1 / rayDir.Y);
@@ -76,23 +76,23 @@ public class Map
         if (rayDir.X < 0)
         {
             stepX = -1;
-            sideDistX = (camera.PosX - mapX) * deltaDistX;
+            sideDistX = (rayStart.X - mapX) * deltaDistX;
         }
         else
         {
             stepX = 1;
-            sideDistX = (mapX + 1.0f - camera.PosX) * deltaDistX;
+            sideDistX = (mapX + 1.0f - rayStart.X) * deltaDistX;
         }
 
         if (rayDir.Y < 0)
         {
             stepY = -1;
-            sideDistY = (camera.PosY - mapY) * deltaDistY;
+            sideDistY = (rayStart.Y - mapY) * deltaDistY;
         }
         else
         {
             stepY = 1;
-            sideDistY = (mapY + 1.0f - camera.PosY) * deltaDistY;
+            sideDistY = (mapY + 1.0f - rayStart.Y) * deltaDistY;
         }
 
         bool hit = false;
@@ -124,11 +124,11 @@ public class Map
         if (!isHorizontalWall)
         {
             pointOnWall.X = mapX + (stepX < 0 ? 1.0f : 0.0f);
-            pointOnWall.Y = camera.PosY + perpWallDist * rayDir.Y;
+            pointOnWall.Y = rayStart.Y + perpWallDist * rayDir.Y;
         }
         else
         {
-            pointOnWall.X = camera.PosX + perpWallDist * rayDir.X;
+            pointOnWall.X = rayStart.X + perpWallDist * rayDir.X;
             pointOnWall.Y = mapY + (stepY < 0 ? 1.0f : 0.0f);
         }
 

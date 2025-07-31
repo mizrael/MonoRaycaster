@@ -6,12 +6,9 @@ namespace MonoRaycaster;
 
 public class Camera
 {
-    private float _posX = 18; 
-    private float _posY = 3; 
-    private float _dirX = -1; 
-    private float _dirY = 0;
-    private float _planeX = 0;
-    private float _planeY = .45f;
+    private Vector2 _position = new(18, 3); 
+    private Vector2 _direction = new(-1, 0);
+    private Vector2 _plane = new(0, .45f);
 
     private readonly Map _map;
 
@@ -28,60 +25,53 @@ public class Camera
 
         var keyboardState = Keyboard.GetState();
 
-        var nextPosX = _posX;
-        var nextPosY = _posY;
+        var nextPosition = _position;
 
         if (keyboardState.IsKeyDown(Keys.W))
         {
-            nextPosX = _posX + _dirX * moveSpeed;
-            nextPosY = _posY + _dirY * moveSpeed;
+            nextPosition = _position + _direction * moveSpeed;
         }
         else if (keyboardState.IsKeyDown(Keys.S))
         {
-            nextPosX = _posX - _dirX * moveSpeed;
-            nextPosY = _posY - _dirY * moveSpeed;
+            nextPosition = _position - _direction * moveSpeed;
         }
 
-        if (nextPosX >= 0 && nextPosX < _map.Cols &&
-            nextPosY >= 0 && nextPosY < _map.Rows &&
-            _map.Cells[(int)nextPosY][(int)nextPosX] == 0)
+        if (nextPosition.X >= 0 && nextPosition.X < _map.Cols &&
+            nextPosition.Y >= 0 && nextPosition.Y < _map.Rows &&
+            _map.Cells[(int)nextPosition.Y][(int)nextPosition.X] == 0)
         {
-            _posX = nextPosX;
-            _posY = nextPosY;
+            _position = nextPosition;
         }
 
         if (keyboardState.IsKeyDown(Keys.A))
         {
-            float oldDirX = _dirX;
+            Vector2 oldDirection = _direction;
             var cos = MathF.Cos(-rotSpeed);
             var sin = MathF.Sin(-rotSpeed);
 
-            _dirX = _dirX * cos - _dirY * sin;
-            _dirY = oldDirX * sin + _dirY * cos;
+            _direction.X = _direction.X * cos - _direction.Y * sin;
+            _direction.Y = oldDirection.X * sin + _direction.Y * cos;
 
-            float oldPlaneX = _planeX;
-            _planeX = _planeX * cos - _planeY * sin;
-            _planeY = oldPlaneX * sin + _planeY * cos;
+            Vector2 oldPlane = _plane;
+            _plane.X = _plane.X * cos - _plane.Y * sin;
+            _plane.Y = oldPlane.X * sin + _plane.Y * cos;
         }
         else if (keyboardState.IsKeyDown(Keys.D))
         {
-            float oldDirX = _dirX;
+            Vector2 oldDirection = _direction;
             var cos = MathF.Cos(rotSpeed);
             var sin = MathF.Sin(rotSpeed);
 
-            _dirX = _dirX * cos - _dirY * sin;
-            _dirY = oldDirX * sin + _dirY * cos;
+            _direction.X = _direction.X * cos - _direction.Y * sin;
+            _direction.Y = oldDirection.X * sin + _direction.Y * cos;
 
-            float oldPlaneX = _planeX;
-            _planeX = _planeX * cos - _planeY * sin;
-            _planeY = oldPlaneX * sin + _planeY * cos;
+            Vector2 oldPlane = _plane;
+            _plane.X = _plane.X * cos - _plane.Y * sin;
+            _plane.Y = oldPlane.X * sin + _plane.Y * cos;
         }
     }
 
-    public float PosX => _posX;
-    public float PosY => _posY;
-    public float DirX => _dirX;
-    public float DirY => _dirY;
-    public float PlaneX => _planeX;
-    public float PlaneY => _planeY;
+    public Vector2 Position => _position;
+    public Vector2 Direction => _direction;
+    public Vector2 Plane => _plane;
 }

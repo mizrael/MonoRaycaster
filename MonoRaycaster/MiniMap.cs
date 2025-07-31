@@ -51,7 +51,7 @@ public class MiniMap
                 spriteBatch.Draw(_texture, dest, color);
             }
 
-        var cameraPos = new Vector2(_camera.PosX * _cellWidth, _camera.PosY * _cellHeight);
+        var cameraPos = new Vector2(_camera.Position.X * _cellWidth, _camera.Position.Y * _cellHeight);
         spriteBatch.Draw(
             _texture,
             cameraPos,
@@ -73,10 +73,10 @@ public class MiniMap
             float offset = 2 * i / (float)(_rayCount - 1) - 1;
 
             var rayDir = new Vector2(
-                _camera.DirX + _camera.PlaneX * offset,
-                _camera.DirY + _camera.PlaneY * offset);
+                _camera.Direction.X + _camera.Plane.X * offset,
+                _camera.Direction.Y + _camera.Plane.Y * offset);
 
-            var interceptionPoint = _map.FindInterceptionPoint(_camera, rayDir);
+            var interceptionPoint = _map.FindInterceptionPoint(_camera.Position, rayDir);
             interceptionPoint.X *= _cellWidth;
             interceptionPoint.Y *= _cellHeight;
             spriteBatch.DrawLine(_texture, startPos, interceptionPoint, 2f, Color.Red);

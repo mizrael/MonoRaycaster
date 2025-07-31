@@ -36,12 +36,12 @@ public class Raycaster
         {
             //calculate ray position and direction
             float cameraY = 2 * y / (float)_frameHeight - 1; //y-coordinate in camera space
-            float rayDirX = camera.DirX + camera.PlaneX * cameraY;
-            float rayDirY = camera.DirY + camera.PlaneY * cameraY;
+            float rayDirX = camera.Direction.X + camera.Plane.X * cameraY;
+            float rayDirY = camera.Direction.Y + camera.Plane.Y * cameraY;
 
             //which box of the map we're in
-            int mapX = (int)camera.PosX;
-            int mapY = (int)camera.PosY;
+            int mapX = (int)camera.Position.X;
+            int mapY = (int)camera.Position.Y;
 
             float deltaDistX = (rayDirX == 0) ? 1e30f : Math.Abs(1 / rayDirX);
             float deltaDistY = (rayDirY == 0) ? 1e30f : Math.Abs(1 / rayDirY);
@@ -54,23 +54,23 @@ public class Raycaster
             if (rayDirX < 0)
             {
                 stepX = -1;
-                sideDistX = (camera.PosX - mapX) * deltaDistX;
+                sideDistX = (camera.Position.X - mapX) * deltaDistX;
             }
             else
             {
                 stepX = 1;
-                sideDistX = (mapX + 1.0f - camera.PosX) * deltaDistX;
+                sideDistX = (mapX + 1.0f - camera.Position.X) * deltaDistX;
             }
 
             if (rayDirY < 0)
             {
                 stepY = -1;
-                sideDistY = (camera.PosY - mapY) * deltaDistY;
+                sideDistY = (camera.Position.Y - mapY) * deltaDistY;
             }
             else
             {
                 stepY = 1;
-                sideDistY = (mapY + 1.0f - camera.PosY) * deltaDistY;
+                sideDistY = (mapY + 1.0f - camera.Position.Y) * deltaDistY;
             }
 
             //DDA
