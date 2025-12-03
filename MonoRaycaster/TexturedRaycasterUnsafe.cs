@@ -13,6 +13,9 @@ public unsafe class TexturedRaycasterUnsafe : Raycaster, IDisposable
     private readonly int _mask;
     private readonly GCHandle[] _textureHandles;
     private readonly uint*[] _texturePointers;
+  
+    private const uint ceilingColor = 0xFF383838; // Dark gray ceiling
+    private const uint floorColor = 0xFF707070;   // Lighter gray floor
 
     public TexturedRaycasterUnsafe(
         Map map,
@@ -54,29 +57,37 @@ public unsafe class TexturedRaycasterUnsafe : Raycaster, IDisposable
         float rayDirY,
         int lineWidth)
     {
-        int texNum = _map.Cells[mapY][mapX] - 1;
-        uint* texturePtr = _texturePointers[texNum];
-
-        float wallY = (side == 0) ?
-            camera.Position.Y + perpWallDist * rayDirY :
-            camera.Position.X + perpWallDist * rayDirX;
-
-        wallY -= MathF.Floor(wallY);
-
-        int texY = (int)(wallY * _texWidth);
-
-        int flipMask = ((side == 0 && rayDirX > 0) || (side == 1 && rayDirY < 0)) ? _mask : 0;
-        texY = texY ^ flipMask;
-
-        float step = 1.0f * _texWidth / lineWidth;
-        float texPos = (drawStart - _frameWidth * .5f + lineWidth * .5f) * step;
-
-        uint* sourcePtr = texturePtr + (_texHeight * texY);
-        int drawLen = drawEnd - drawStart + 1;
-
         fixed (Color* destColorPtr = span)
         {
-            uint* destPtr = (uint*)(destColorPtr + y * _frameWidth + drawStart);
+            uint* columnPtr = (uint*)(destColorPtr + y * _frameWidth);
+
+            // Render ceiling (from top of screen to wall start)
+            for (int i = 0; i < drawStart; i++)
+            {
+                columnPtr[i] = ceilingColor;
+            }
+
+            int texNum = _map.Cells[mapY][mapX] - 1;
+            uint* texturePtr = _texturePointers[texNum];
+
+            float wallY = (side == 0) ?
+                camera.Position.Y + perpWallDist * rayDirY :
+                camera.Position.X + perpWallDist * rayDirX;
+
+            wallY -= MathF.Floor(wallY);
+
+            int texY = (int)(wallY * _texWidth);
+
+            int flipMask = ((side == 0 && rayDirX > 0) || (side == 1 && rayDirY < 0)) ? _mask : 0;
+            texY = texY ^ flipMask;
+
+            float step = 1.0f * _texWidth / lineWidth;
+            float texPos = (drawStart - _frameWidth * .5f + lineWidth * .5f) * step;
+
+            uint* sourcePtr = texturePtr + (_texHeight * texY);
+            int drawLen = drawEnd - drawStart + 1;
+
+            uint* destPtr = columnPtr + drawStart;
 
             // Use simplified rendering when wall is extremely close
             if (step < 0.15f)
@@ -128,6 +139,12 @@ public unsafe class TexturedRaycasterUnsafe : Raycaster, IDisposable
                     destPtr[i] = sourcePtr[((int)texPos) & _mask];
                     texPos += step;
                 }
+            }
+
+            // Render floor (from wall end to bottom of screen)
+            for (int i = drawEnd + 1; i < _frameWidth; i++)
+            {
+                columnPtr[i] = floorColor;
             }
         }
     }
