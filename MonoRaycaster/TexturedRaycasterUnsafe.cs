@@ -16,6 +16,7 @@ public unsafe class TexturedRaycasterUnsafe : Raycaster, IDisposable
   
     private const uint ceilingColor = 0xFF383838; // Dark gray ceiling
     private const uint floorColor = 0xFF707070;   // Lighter gray floor
+    private const float stepTreshold = 0.15f;
 
     public TexturedRaycasterUnsafe(
         Map map,
@@ -63,9 +64,7 @@ public unsafe class TexturedRaycasterUnsafe : Raycaster, IDisposable
 
             // Render ceiling (from top of screen to wall start)
             for (int i = 0; i < drawStart; i++)
-            {
                 columnPtr[i] = ceilingColor;
-            }
 
             int texNum = _map.Cells[mapY][mapX] - 1;
             uint* texturePtr = _texturePointers[texNum];
@@ -90,7 +89,7 @@ public unsafe class TexturedRaycasterUnsafe : Raycaster, IDisposable
             uint* destPtr = columnPtr + drawStart;
 
             // Use simplified rendering when wall is extremely close
-            if (step < 0.15f)
+            if (step < stepTreshold)
             {
                 int i = 0;
 
@@ -108,9 +107,7 @@ public unsafe class TexturedRaycasterUnsafe : Raycaster, IDisposable
                     // Fill multiple pixels with the same color
                     int fillEnd = Math.Min(i + pixelsToFill, drawLen);
                     for (int j = i; j < fillEnd; j++)
-                    {
                         destPtr[j] = color;
-                    }
 
                     i = fillEnd;
                     texPos += step * pixelsToFill;
@@ -143,9 +140,7 @@ public unsafe class TexturedRaycasterUnsafe : Raycaster, IDisposable
 
             // Render floor (from wall end to bottom of screen)
             for (int i = drawEnd + 1; i < _frameWidth; i++)
-            {
                 columnPtr[i] = floorColor;
-            }
         }
     }
 
