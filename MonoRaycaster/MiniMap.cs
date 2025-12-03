@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Collections.Generic;
 
 namespace MonoRaycaster;
 
@@ -13,6 +14,8 @@ public class MiniMap
     private readonly int _cellHeight;
     private readonly Texture2D _texture;
     private readonly Vector2 _cellCenter;
+
+    public readonly Color[] CellColors;
 
     public MiniMap(
         Map map,
@@ -35,6 +38,27 @@ public class MiniMap
 
         _texture = new Texture2D(graphicsDevice, 1, 1);
         _texture.SetData([Color.White]);
+
+        var cellTypes = new HashSet<int>();
+        for (int row = 0; row != _map.Rows; row++)
+            for (int col = 0; col != _map.Cols; col++)
+            {
+                var cell = _map.Cells[row][col];
+                cellTypes.Add(cell);
+            }
+
+        var colorsCount = cellTypes.Count;
+
+        CellColors = new Color[colorsCount];
+        CellColors[0] = Color.DarkSlateGray;
+        for (int c = 1; c != colorsCount; c++)
+        {
+            CellColors[c] = new Color(
+                (byte)Random.Shared.Next(100, 220),
+                (byte)Random.Shared.Next(100, 220),
+                (byte)Random.Shared.Next(100, 220),
+                (byte)255);
+        }
     }
 
     public void Render(SpriteBatch spriteBatch)
@@ -43,9 +67,13 @@ public class MiniMap
             for (int col = 0; col != _map.Cols; col++)
             {
                 var cell = _map.Cells[row][col];
-                if (cell == 0) continue;
+                if (cell == TileTypes.Floor) continue;
 
-                var color = _map.CellColors[cell];
+                var color = cell switch
+                {
+                    TileTypes.Door => Color.Brown,
+                    _ => CellColors[cell],
+                };
 
                 var dest = new Rectangle(
                     col * _cellWidth,

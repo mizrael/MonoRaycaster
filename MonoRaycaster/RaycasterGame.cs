@@ -61,7 +61,7 @@ public class RaycasterGame : Game
 
         var mainTexture = Content.Load<Texture2D>("wolftextures");
         var textures = mainTexture.Split(64, 64).Select(t => t.Rotate90(RotationDirection.CounterClockwise)).ToArray();
-        _raycaster = new TexturedRaycasterUnsafe(_map, FrameBufferWidth, FrameBufferHeight, textures);
+        _raycaster = new Raycaster(_map, FrameBufferWidth, FrameBufferHeight, textures);
 
         // _raycaster = new Raycaster(_map, FrameBufferWidth, FrameBufferHeight);
 
@@ -76,6 +76,8 @@ public class RaycasterGame : Game
             Exit();
 
         _camera.Update(gameTime);
+
+        _map.Update(gameTime);
 
         _raycaster.Update(_camera);
         _frameTexture.SetData(_raycaster.FrameBuffer);

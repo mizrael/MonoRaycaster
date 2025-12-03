@@ -25,6 +25,9 @@ public class Camera
 
         var keyboardState = Keyboard.GetState();
 
+        if (keyboardState.IsKeyDown(Keys.E))
+            TryOpenDoor();
+
         var nextPosition = _position;
 
         if (keyboardState.IsKeyDown(Keys.W))
@@ -36,9 +39,7 @@ public class Camera
             nextPosition = _position - _direction * moveSpeed;
         }
 
-        if (nextPosition.X >= 0 && nextPosition.X < _map.Cols &&
-            nextPosition.Y >= 0 && nextPosition.Y < _map.Rows &&
-            _map.Cells[(int)nextPosition.Y][(int)nextPosition.X] == 0)
+        if(!_map.IsBlocked((int)nextPosition.X, (int)_position.Y))
         {
             _position = nextPosition;
         }
@@ -70,6 +71,25 @@ public class Camera
             _plane.Y = oldPlane.X * sin + _plane.Y * cos;
         }
     }
+
+    private void TryOpenDoor()
+    {
+        float checkDistance = 1.5f;
+
+        for (float dist = 0.1f; dist <= checkDistance; dist += 0.1f)
+        {
+            int checkX = (int)(_position.X + _direction.X * dist);
+            int checkY = (int)(_position.Y + _direction.Y * dist);
+
+            var door = _map.GetDoor(checkX, checkY);
+            if (door is not null)
+            {   
+                door.StartOpening();
+                break;
+            }
+        }
+    }
+
 
     public Vector2 Position => _position;
     public Vector2 Direction => _direction;
