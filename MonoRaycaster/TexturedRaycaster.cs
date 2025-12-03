@@ -54,8 +54,8 @@ public class TexturedRaycaster : Raycaster
         wallY -= MathF.Floor(wallY);
 
         int texY = (int)(wallY * _texWidth);
-        if (side == 0 && rayDirX > 0) texY = _mask - texY;
-        else if (side == 1 && rayDirY < 0) texY = _mask - texY;
+        int flipMask = ((side == 0 && rayDirX > 0) || (side == 1 && rayDirY < 0)) ? _mask : 0;
+        texY = texY ^ flipMask;
 
         float step = 1.0f * _texWidth / lineWidth;
         float texPos = (drawStart - _frameWidth * .5f + lineWidth * .5f) * step;
