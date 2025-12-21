@@ -138,7 +138,7 @@ public unsafe class Raycaster : IDisposable
                     var door = _map.GetDoor(mapX, mapY);
                     
                     // Store door information if it's not fully open
-                    if (door != null && door.OpenAmount < 0.9f && doorHit == null)
+                    if (door != null && door.IsBlocking && doorHit == null)
                     {
                         doorHit = door;
                         doorMapX = mapX;
@@ -148,13 +148,6 @@ public unsafe class Raycaster : IDisposable
                             ? (sideDistX - deltaDistX)
                             : (sideDistY - deltaDistY);
                     }
-                    
-                    // Only stop at door if it's blocking
-                    if (door != null && door.IsBlocking)
-                    {
-                        hit = true;
-                    }
-                    // Otherwise, continue through the open door
                 }
                 else
                 {
@@ -184,7 +177,7 @@ public unsafe class Raycaster : IDisposable
             }
 
             // If we hit a partially open door, render it on top
-            if (doorHit != null && doorHit.OpenAmount < 0.9f)
+            if (doorHit != null && doorHit.IsBlocking)
             {
                 int doorLineWidth = (int)(_frameWidth / doorPerpWallDist);
                 int doorDrawStart = (-doorLineWidth + _frameWidth) / 2;
