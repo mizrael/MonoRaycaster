@@ -77,7 +77,7 @@ public class Map
             return door!.IsBlocking;
         }
 
-        return false;
+        return true;
     }
 
     public Door? GetDoor(int x, int y)
