@@ -1,7 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
-using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 
 namespace MonoRaycaster;
@@ -61,146 +60,149 @@ public unsafe class Raycaster : IDisposable
 
     public void Update(Camera camera)
     {
-        var span = FrameBuffer.AsSpan();
-        span.Clear();
-
-        for (int y = 0; y < _frameHeight; y++)
+        fixed (Color* frameBufferPtr = FrameBuffer)
         {
-            //calculate ray position and direction
-            float cameraY = 2 * y / (float)_frameHeight - 1; //y-coordinate in camera space
-            float rayDirX = camera.Direction.X + camera.Plane.X * cameraY;
-            float rayDirY = camera.Direction.Y + camera.Plane.Y * cameraY;
+            uint* pixels = (uint*)frameBufferPtr;
 
-            //which box of the map we're in
-            int mapX = (int)camera.Position.X;
-            int mapY = (int)camera.Position.Y;
-
-            float deltaDistX = (rayDirX == 0) ? 1e30f : Math.Abs(1 / rayDirX);
-            float deltaDistY = (rayDirY == 0) ? 1e30f : Math.Abs(1 / rayDirY);
-
-            int stepX;
-            int stepY;
-            float sideDistX;
-            float sideDistY;
-
-            if (rayDirX < 0)
+            for (int y = 0; y < _frameHeight; y++)
             {
-                stepX = -1;
-                sideDistX = (camera.Position.X - mapX) * deltaDistX;
-            }
-            else
-            {
-                stepX = 1;
-                sideDistX = (mapX + 1.0f - camera.Position.X) * deltaDistX;
-            }
+                uint* columnPtr = pixels + y * _frameWidth;
 
-            if (rayDirY < 0)
-            {
-                stepY = -1;
-                sideDistY = (camera.Position.Y - mapY) * deltaDistY;
-            }
-            else
-            {
-                stepY = 1;
-                sideDistY = (mapY + 1.0f - camera.Position.Y) * deltaDistY;
-            }
+                //calculate ray position and direction
+                float cameraY = 2 * y / (float)_frameHeight - 1; //y-coordinate in camera space
+                float rayDirX = camera.Direction.X + camera.Plane.X * cameraY;
+                float rayDirY = camera.Direction.Y + camera.Plane.Y * cameraY;
 
-            // Store door hit info for later rendering
-            Door? doorHit = null;
-            int doorMapX = 0, doorMapY = 0;
-            int doorSide = 0;
-            float doorPerpWallDist = 0;
+                //which box of the map we're in
+                int mapX = (int)camera.Position.X;
+                int mapY = (int)camera.Position.Y;
 
-            //DDA
-            bool hit = false;
-            int side = 0;
-            while (!hit)
-            {
-                if (sideDistX < sideDistY)
+                float deltaDistX = (rayDirX == 0) ? 1e30f : Math.Abs(1 / rayDirX);
+                float deltaDistY = (rayDirY == 0) ? 1e30f : Math.Abs(1 / rayDirY);
+
+                int stepX;
+                int stepY;
+                float sideDistX;
+                float sideDistY;
+
+                if (rayDirX < 0)
                 {
-                    sideDistX += deltaDistX;
-                    mapX += stepX;
-                    side = 0;
+                    stepX = -1;
+                    sideDistX = (camera.Position.X - mapX) * deltaDistX;
                 }
                 else
                 {
-                    sideDistY += deltaDistY;
-                    mapY += stepY;
-                    side = 1;
+                    stepX = 1;
+                    sideDistX = (mapX + 1.0f - camera.Position.X) * deltaDistX;
                 }
 
-                var cell = _map.Cells[mapY][mapX];
-                if (cell == TileTypes.Floor)
-                    continue;
-
-                if (cell == TileTypes.Door)
+                if (rayDirY < 0)
                 {
-                    var door = _map.GetDoor(mapX, mapY);
-                    
-                    // Store door information if it's not fully open
-                    if (door != null && door.IsBlocking && doorHit == null)
+                    stepY = -1;
+                    sideDistY = (camera.Position.Y - mapY) * deltaDistY;
+                }
+                else
+                {
+                    stepY = 1;
+                    sideDistY = (mapY + 1.0f - camera.Position.Y) * deltaDistY;
+                }
+
+                // Store door hit info for later rendering
+                Door? doorHit = null;
+                int doorMapX = 0, doorMapY = 0;
+                int doorSide = 0;
+                float doorPerpWallDist = 0;
+
+                //DDA
+                bool hit = false;
+                int side = 0;
+                while (!hit)
+                {
+                    if (sideDistX < sideDistY)
                     {
-                        doorHit = door;
-                        doorMapX = mapX;
-                        doorMapY = mapY;
-                        doorSide = side;
-                        doorPerpWallDist = side == 0
-                            ? (sideDistX - deltaDistX)
-                            : (sideDistY - deltaDistY);
+                        sideDistX += deltaDistX;
+                        mapX += stepX;
+                        side = 0;
+                    }
+                    else
+                    {
+                        sideDistY += deltaDistY;
+                        mapY += stepY;
+                        side = 1;
+                    }
+
+                    var cell = _map.Cells[mapY][mapX];
+                    if (cell == TileTypes.Floor)
+                        continue;
+
+                    if (cell == TileTypes.Door)
+                    {
+                        var door = _map.GetDoor(mapX, mapY);
+                        
+                        // Store door information if it's not fully open
+                        if (door != null && door.IsBlocking && doorHit == null)
+                        {
+                            doorHit = door;
+                            doorMapX = mapX;
+                            doorMapY = mapY;
+                            doorSide = side;
+                            doorPerpWallDist = side == 0
+                                ? (sideDistX - deltaDistX)
+                                : (sideDistY - deltaDistY);
+                        }
+                    }
+                    else
+                    {
+                        hit = true;
                     }
                 }
-                else
+
+                float perpWallDist = side == 0
+                    ? (sideDistX - deltaDistX)
+                    : (sideDistY - deltaDistY);
+
+                int lineWidth = (int)(_frameWidth / perpWallDist);
+
+                int drawStart = (-lineWidth + _frameWidth) / 2;
+                if (drawStart < 0)
+                    drawStart = 0;
+
+                int drawEnd = (lineWidth + _frameWidth) / 2;
+                if (drawEnd >= _frameWidth)
+                    drawEnd = _frameWidth - 1;
+
+                // Render the farthest wall first (what's behind the door)
+                int length = drawEnd - drawStart + 1;
+                if (length > 0)
                 {
-                    hit = true;
+                    UpdateRow(columnPtr, camera, mapX, mapY, side, drawStart, drawEnd, perpWallDist, rayDirX, rayDirY, lineWidth);
                 }
-            }
 
-            float perpWallDist = side == 0
-                ? (sideDistX - deltaDistX)
-                : (sideDistY - deltaDistY);
-
-            int lineWidth = (int)(_frameWidth / perpWallDist);
-
-            int drawStart = (-lineWidth + _frameWidth) / 2;
-            if (drawStart < 0)
-                drawStart = 0;
-
-            int drawEnd = (lineWidth + _frameWidth) / 2;
-            if (drawEnd >= _frameWidth)
-                drawEnd = _frameWidth - 1;
-
-            // Render the farthest wall first (what's behind the door)
-            int length = drawEnd - drawStart + 1;
-            if (length > 0)
-            {
-                UpdateRow(span, camera, y, mapX, mapY, side, drawStart, drawEnd, perpWallDist, rayDirX, rayDirY, lineWidth);
-            }
-
-            // If we hit a partially open door, render it on top
-            if (doorHit != null && doorHit.IsBlocking)
-            {
-                int doorLineWidth = (int)(_frameWidth / doorPerpWallDist);
-                int doorDrawStart = (-doorLineWidth + _frameWidth) / 2;
-                if (doorDrawStart < 0)
-                    doorDrawStart = 0;
-
-                int doorDrawEnd = (doorLineWidth + _frameWidth) / 2;
-                if (doorDrawEnd >= _frameWidth)
-                    doorDrawEnd = _frameWidth - 1;
-
-                if (doorDrawEnd - doorDrawStart + 1 > 0)
+                // If we hit a partially open door, render it on top
+                if (doorHit != null && doorHit.IsBlocking)
                 {
-                    RenderDoor(span, camera, y, doorMapX, doorMapY, doorSide, doorDrawStart, doorDrawEnd, 
-                              doorPerpWallDist, rayDirX, rayDirY, doorLineWidth, doorHit);
+                    int doorLineWidth = (int)(_frameWidth / doorPerpWallDist);
+                    int doorDrawStart = (-doorLineWidth + _frameWidth) / 2;
+                    if (doorDrawStart < 0)
+                        doorDrawStart = 0;
+
+                    int doorDrawEnd = (doorLineWidth + _frameWidth) / 2;
+                    if (doorDrawEnd >= _frameWidth)
+                        doorDrawEnd = _frameWidth - 1;
+
+                    if (doorDrawEnd - doorDrawStart + 1 > 0)
+                    {
+                        RenderDoor(columnPtr, camera, doorMapX, doorMapY, doorSide, doorDrawStart, doorDrawEnd, 
+                                  doorPerpWallDist, rayDirX, rayDirY, doorLineWidth, doorHit);
+                    }
                 }
             }
         }
     }
 
     private void RenderDoor(
-        Span<Color> span,
+        uint* columnPtr,
         Camera camera,
-        int y,
         int mapX,
         int mapY,
         int side,
@@ -212,42 +214,36 @@ public unsafe class Raycaster : IDisposable
         int lineWidth,
         Door door)
     {
-        fixed (Color* destColorPtr = span)
+        float wallY = (side == 0) ?
+            camera.Position.Y + perpWallDist * rayDirY :
+            camera.Position.X + perpWallDist * rayDirX;
+        wallY -= MathF.Floor(wallY);
+
+        // Apply door sliding offset based on which side we're viewing from
+        float doorOffset = 0;
+        if (door.IsVertical)
         {
-            uint* columnPtr = (uint*)(destColorPtr + y * _frameWidth);
+            if (side == 0) // Viewing from E-W
+                doorOffset = door.OpenAmount;
+        }
+        else
+        {
+            if (side == 1) // Viewing from N-S
+                doorOffset = door.OpenAmount;
+        }
 
-            float wallY = (side == 0) ?
-                camera.Position.Y + perpWallDist * rayDirY :
-                camera.Position.X + perpWallDist * rayDirX;
-            wallY -= MathF.Floor(wallY);
-
-            // Apply door sliding offset based on which side we're viewing from
-            float doorOffset = 0;
-            if (door.IsVertical)
-            {
-                if (side == 0) // Viewing from E-W
-                    doorOffset = door.OpenAmount;
-            }
-            else
-            {
-                if (side == 1) // Viewing from N-S
-                    doorOffset = door.OpenAmount;
-            }
-
-            wallY -= doorOffset;
-            
-            // Only render the visible part of the door
-            if (wallY >= 0 && wallY <= 1)
-            {
-                UpdateRow(side, drawStart, drawEnd, rayDirX, rayDirY, lineWidth, columnPtr, wallY, texNum: 0);
-            }
+        wallY -= doorOffset;
+        
+        // Only render the visible part of the door
+        if (wallY >= 0 && wallY <= 1)
+        {
+            UpdateRow(side, drawStart, drawEnd, rayDirX, rayDirY, lineWidth, columnPtr, wallY, texNum: 0);
         }
     }
 
     private void UpdateRow(
-        Span<Color> span,
+        uint* columnPtr,
         Camera camera,
-        int y,
         int mapX,
         int mapY,
         int side,
@@ -258,31 +254,28 @@ public unsafe class Raycaster : IDisposable
         float rayDirY,
         int lineWidth)
     {
-        fixed (Color* destColorPtr = span)
+        // Render ceiling (from top of screen to wall start)
+        if (drawStart > 0)
+            new Span<uint>(columnPtr, drawStart).Fill(ceilingColor);
+
+        float wallY = (side == 0) ?
+            camera.Position.Y + perpWallDist * rayDirY :
+            camera.Position.X + perpWallDist * rayDirX;
+        wallY -= MathF.Floor(wallY);
+
+        int tileType = _map.Cells[mapY][mapX];
+        
+        // Regular wall rendering (doors are handled separately now)
+        if (tileType != TileTypes.Floor && tileType != TileTypes.Door)
         {
-            uint* columnPtr = (uint*)(destColorPtr + y * _frameWidth);
-
-            // Render ceiling (from top of screen to wall start)
-            for (int i = 0; i < drawStart; i++)
-                columnPtr[i] = ceilingColor;
-
-            float wallY = (side == 0) ?
-                camera.Position.Y + perpWallDist * rayDirY :
-                camera.Position.X + perpWallDist * rayDirX;
-            wallY -= MathF.Floor(wallY);
-
-            int tileType = _map.Cells[mapY][mapX];
-            
-            // Regular wall rendering (doors are handled separately now)
-            if (tileType != TileTypes.Floor && tileType != TileTypes.Door)
-            {
-                UpdateRow(side, drawStart, drawEnd, rayDirX, rayDirY, lineWidth, columnPtr, wallY, texNum: tileType - 1);
-            }
-
-            // Render floor (from wall end to bottom of screen)
-            for (int i = drawEnd + 1; i < _frameWidth; i++)
-                columnPtr[i] = floorColor;
+            UpdateRow(side, drawStart, drawEnd, rayDirX, rayDirY, lineWidth, columnPtr, wallY, texNum: tileType - 1);
         }
+
+        // Render floor (from wall end to bottom of screen)
+        int floorStart = drawEnd + 1;
+        int floorCount = _frameWidth - floorStart;
+        if (floorCount > 0)
+            new Span<uint>(columnPtr + floorStart, floorCount).Fill(floorColor);
     }
 
     private void UpdateRow(int side, int drawStart, int drawEnd, float rayDirX, float rayDirY, int lineWidth, uint* columnPtr, float wallY, int texNum)
