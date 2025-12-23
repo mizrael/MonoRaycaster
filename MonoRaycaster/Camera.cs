@@ -25,23 +25,23 @@ public class Camera
 
         var keyboardState = Keyboard.GetState();
 
-        if (keyboardState.IsKeyDown(Keys.E))
-            TryOpenDoor();
+        if (keyboardState.IsKeyDown(Keys.E) && TryOpenDoor())
+            return;
 
-        var nextPosition = _position;
-
+        float moveAmount = 0;
         if (keyboardState.IsKeyDown(Keys.W))
-        {
-            nextPosition = _position + _direction * moveSpeed;
-        }
+            moveAmount = moveSpeed;
         else if (keyboardState.IsKeyDown(Keys.S))
-        {
-            nextPosition = _position - _direction * moveSpeed;
-        }
+            moveAmount = -moveSpeed;
 
-        if(!_map.IsBlocked((int)nextPosition.X, (int)_position.Y))
+        if (moveAmount != 0)
         {
-            _position = nextPosition;
+            var moveStep = _direction * moveAmount;
+            if (!_map.IsBlocked((int)(_position.X + moveStep.X), (int)_position.Y))
+                _position.X += moveStep.X;
+
+            if (!_map.IsBlocked((int)_position.X, (int)(_position.Y + moveStep.Y)))
+                _position.Y += moveStep.Y;
         }
 
         if (keyboardState.IsKeyDown(Keys.A))
@@ -72,7 +72,7 @@ public class Camera
         }
     }
 
-    private void TryOpenDoor()
+    private bool TryOpenDoor()
     {
         float checkDistance = 1.5f;
 
@@ -85,9 +85,11 @@ public class Camera
             if (door is not null)
             {   
                 door.StartOpening();
-                break;
+                return true;
             }
         }
+
+        return false;
     }
 
 
