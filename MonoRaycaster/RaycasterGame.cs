@@ -61,13 +61,13 @@ public class RaycasterGame : Game
 
         var mainTexture = Content.Load<Texture2D>("wolftextures");
         var textures = mainTexture.Split(64, 64).Select(t => t.Rotate90(RotationDirection.CounterClockwise)).ToArray();
-        _raycaster = new TexturedRaycaster(_map, FrameBufferWidth, FrameBufferHeight, textures);
+        _raycaster = new Raycaster(_map, FrameBufferWidth, FrameBufferHeight, textures);
 
         // _raycaster = new Raycaster(_map, FrameBufferWidth, FrameBufferHeight);
 
         _font = Content.Load<SpriteFont>("Font");
 
-        _miniMap = new MiniMap(_map, 800, 600, GraphicsDevice, _camera);
+        _miniMap = new MiniMap(_map, ScreenWidth, ScreenHeight, GraphicsDevice, _camera);
     }
 
     protected override void Update(GameTime gameTime)
@@ -76,6 +76,8 @@ public class RaycasterGame : Game
             Exit();
 
         _camera.Update(gameTime);
+
+        _map.Update(gameTime);
 
         _raycaster.Update(_camera);
         _frameTexture.SetData(_raycaster.FrameBuffer);

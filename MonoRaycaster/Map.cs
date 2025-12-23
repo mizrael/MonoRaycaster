@@ -1,7 +1,14 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
+using System.Collections.Generic;
 
 namespace MonoRaycaster;
+
+public class TileTypes
+{
+    public const int Door = 100;
+    public const int Floor = 0;
+}
 
 public class Map
 {
@@ -9,7 +16,7 @@ public class Map
       [ 8,8,8,8,8,8,8,8,8,8,8,4,4,6,4,4,6,4,6,4,4,4,6,4],
       [ 8,0,0,0,0,0,0,0,0,0,8,4,0,0,0,0,0,0,0,0,0,0,0,4],
       [ 8,0,3,3,0,0,0,0,0,8,8,4,0,0,0,0,0,0,0,0,0,0,0,6],
-      [ 8,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6],
+      [ 8,0,0,3,0,0,0,0,0,0,0,100,0,0,0,0,0,0,0,0,0,0,0,6],
       [ 8,0,3,3,0,0,0,0,0,8,8,4,0,0,0,0,0,0,0,0,0,0,0,4],
       [ 8,0,0,0,0,0,0,0,0,0,8,4,0,0,0,0,0,6,6,6,0,6,4,6],
       [ 8,8,8,8,0,8,8,8,8,8,8,4,4,4,4,4,4,6,0,0,0,0,0,6],
@@ -35,28 +42,52 @@ public class Map
     public readonly int Cols;
     public readonly int Rows;
 
-    public readonly Color[] CellColors;
+    private readonly Dictionary<(int, int), Door> _doors = new();
 
     public Map()
     {
         Rows = Cells.Length;
         Cols = Cells.Length;
 
-        var colorsCount = 0;
         for (int row = 0; row != Rows; row++)
             for (int col = 0; col != Cols; col++)
-                colorsCount = MathHelper.Max(colorsCount, Cells[row][col]);
-        colorsCount++;
+            {
+                var cell = Cells[row][col];
+                if(cell == TileTypes.Door)
+                {
+                    var door = new Door(row, col, true);
+                    _doors[(col, row)] = door;
+                }
+            }
+    }
 
-        CellColors = new Color[colorsCount];
-        CellColors[0] = Color.DarkSlateGray;
-        for (int c = 1; c != colorsCount; c++)
+    public bool IsBlocked(int x, int y)
+    {
+        if (x < 0 || x >= Cols || y < 0 || y >= Rows)
+            return true;
+
+        // Regular floor cell
+        var cell = Cells[y][x];
+        if (cell == TileTypes.Floor)
+            return false;
+
+        if (cell == TileTypes.Door)
         {
-            CellColors[c] = new Color(
-                (byte)Random.Shared.Next(100, 220),
-                (byte)Random.Shared.Next(100, 220),
-                (byte)Random.Shared.Next(100, 220),
-                (byte)255);
+            var door = GetDoor(x, y);
+            return door!.IsBlocking;
+        }
+
+        return true;
+    }
+
+    public Door? GetDoor(int x, int y)
+    => _doors.TryGetValue((x, y), out var door) ? door : null;
+    
+    public void Update(GameTime gameTime)
+    {
+        foreach (var door in _doors.Values)
+        {
+            door.Update(gameTime);
         }
     }
 

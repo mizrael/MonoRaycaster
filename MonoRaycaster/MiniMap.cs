@@ -1,5 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
+using System.Collections.Generic;
 
 namespace MonoRaycaster;
 
@@ -12,27 +14,51 @@ public class MiniMap
     private readonly int _cellHeight;
     private readonly Texture2D _texture;
     private readonly Vector2 _cellCenter;
-    private readonly int _rayCount;
+
+    public readonly Color[] CellColors;
 
     public MiniMap(
         Map map,
-        int frameWidth,
-        int frameHeight,
+        int screenWidth,
+        int screenHeight,
         GraphicsDevice graphicsDevice,
-        Camera camera,
-        int rayCount = 100)
+        Camera camera)  
     {
         _map = map;
         _camera = camera;
-        _rayCount = rayCount;
 
-        _cellWidth = frameWidth / _map.Cols;
-        _cellHeight = frameHeight / _map.Rows;
+        float zoom = 0.25f;
+        int minimapWidth = (int)(screenWidth * zoom);
+        int minimapHeight = (int)(screenHeight * zoom);
+
+        _cellWidth = minimapWidth / _map.Cols;
+        _cellHeight = minimapHeight / _map.Rows;
 
         _cellCenter = new Vector2(_cellWidth, _cellHeight) * .25f;
 
         _texture = new Texture2D(graphicsDevice, 1, 1);
         _texture.SetData([Color.White]);
+
+        var cellTypes = new HashSet<int>();
+        for (int row = 0; row != _map.Rows; row++)
+            for (int col = 0; col != _map.Cols; col++)
+            {
+                var cell = _map.Cells[row][col];
+                cellTypes.Add(cell);
+            }
+
+        var colorsCount = cellTypes.Count;
+
+        CellColors = new Color[colorsCount];
+        CellColors[0] = Color.DarkSlateGray;
+        for (int c = 1; c != colorsCount; c++)
+        {
+            CellColors[c] = new Color(
+                (byte)Random.Shared.Next(100, 220),
+                (byte)Random.Shared.Next(100, 220),
+                (byte)Random.Shared.Next(100, 220),
+                (byte)255);
+        }
     }
 
     public void Render(SpriteBatch spriteBatch)
@@ -41,7 +67,13 @@ public class MiniMap
             for (int col = 0; col != _map.Cols; col++)
             {
                 var cell = _map.Cells[row][col];
-                var color = _map.CellColors[cell];
+                if (cell == TileTypes.Floor) continue;
+
+                var color = cell switch
+                {
+                    TileTypes.Door => Color.Brown,
+                    _ => CellColors[cell],
+                };
 
                 var dest = new Rectangle(
                     col * _cellWidth,
@@ -51,35 +83,51 @@ public class MiniMap
                 spriteBatch.Draw(_texture, dest, color);
             }
 
-        var cameraPos = new Vector2(_camera.Position.X * _cellWidth, _camera.Position.Y * _cellHeight);
-        spriteBatch.Draw(
-            _texture,
-            cameraPos,
-            sourceRectangle: null,
-            color: Color.Black,
-            rotation: 0f,
-            origin: Vector2.Zero,
-            scale: _cellCenter * 2f,
-            effects: SpriteEffects.None,
-            layerDepth: 0);
-
-        RenderFieldOfViewCone(spriteBatch, cameraPos + _cellCenter);
+        DrawCameraArrow(spriteBatch);
     }
 
-    private void RenderFieldOfViewCone(SpriteBatch spriteBatch, Vector2 startPos)
+    private void DrawCameraArrow(SpriteBatch spriteBatch)
     {
-        for (int i = 0; i < _rayCount; i++)
+        var cameraPos = new Vector2(_camera.Position.X * _cellWidth, _camera.Position.Y * _cellHeight);
+        var center = cameraPos + _cellCenter;
+
+        float arrowSize = _cellWidth * 0.75f; 
+        var arrowTip = center + new Vector2(_camera.Direction.X, _camera.Direction.Y) * arrowSize;
+        var perpDir = new Vector2(-_camera.Direction.Y, _camera.Direction.X);
+
+        var arrowLeft = center - new Vector2(_camera.Direction.X, _camera.Direction.Y) * (arrowSize * 0.5f) + perpDir * (arrowSize * 0.5f);
+        var arrowRight = center - new Vector2(_camera.Direction.X, _camera.Direction.Y) * (arrowSize * 0.5f) - perpDir * (arrowSize * 0.5f);
+
+        int steps = 10;
+        for (int i = 0; i <= steps; i++)
         {
-            float offset = 2 * i / (float)(_rayCount - 1) - 1;
-
-            var rayDir = new Vector2(
-                _camera.Direction.X + _camera.Plane.X * offset,
-                _camera.Direction.Y + _camera.Plane.Y * offset);
-
-            var interceptionPoint = _map.FindInterceptionPoint(_camera.Position, rayDir);
-            interceptionPoint.X *= _cellWidth;
-            interceptionPoint.Y *= _cellHeight;
-            spriteBatch.DrawLine(_texture, startPos, interceptionPoint, 2f, Color.Red);
+            float t = i / (float)steps;
+            var leftPoint = Vector2.Lerp(arrowTip, arrowLeft, t);
+            var rightPoint = Vector2.Lerp(arrowTip, arrowRight, t);
+            DrawLine(spriteBatch, leftPoint, rightPoint, Color.Black, 1f);
         }
+
+        DrawLine(spriteBatch, arrowTip, arrowLeft, Color.Black, 2f);
+        DrawLine(spriteBatch, arrowTip, arrowRight, Color.Black, 2f);
+        DrawLine(spriteBatch, arrowLeft, arrowRight, Color.Black, 2f);
+    }
+
+    private void DrawLine(SpriteBatch spriteBatch, Vector2 start, Vector2 end, Color color, float thickness)
+    {
+        var distance = Vector2.Distance(start, end);
+        var angle = (float)Math.Atan2(end.Y - start.Y, end.X - start.X);
+        var origin = new Vector2(0, 0.5f);
+        var scale = new Vector2(distance, thickness);
+
+        spriteBatch.Draw(
+            _texture,
+            start,
+            sourceRectangle: null,
+            color: color,
+            rotation: angle,
+            origin: origin,
+            scale: scale,
+            effects: SpriteEffects.None,
+            layerDepth: 0);
     }
 }
