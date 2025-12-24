@@ -55,7 +55,7 @@ public class RaycasterGame : Game
 
         _frameTexture = new Texture2D(GraphicsDevice, FrameBufferWidth, FrameBufferHeight);
 
-        _map = new Map();
+        _map = LevelLoader.LoadFromJson("./data/levels/level1.json");
 
         _camera = new(_map);
 
