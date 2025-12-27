@@ -1,14 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
-namespace MonoRaycaster;
+namespace MonoRaycaster.Persistence;
 
 public class LevelLoader
 {
+    private readonly static JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
+
     public static Map LoadFromJson(string path)
     {
         var json = System.IO.File.ReadAllText(path);
-        var levelData = System.Text.Json.JsonSerializer.Deserialize<LevelData>(json);
+        var levelData = JsonSerializer.Deserialize<LevelData>(json, _jsonOptions);
         if (levelData == null)
             throw new Exception("Failed to deserialize map data.");
         var map = new Map(levelData.Map.Cells);
@@ -28,8 +35,13 @@ public class LevelLoader
 
     private class EntityData
     {
+        [JsonPropertyName("name")]
+        public required string Name { get; set; }
+
+        [JsonPropertyName("type")]
         public required string Type { get; set; }
-        public float X { get; set; }
-        public float Y { get; set; }
+        public int TileX { get; set; }
+        public int TileY { get; set; }
+        public Dictionary<string, string> Properties { get; set; } = new();
     }
 }
